@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boning Shao</title>
+    <meta name="description" content="Boning Shao — undergraduate at The University of Hong Kong, working on dexterous manipulation and embodied AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
+    <style>
+        /* =====================================================================
+           PALETTE — swap these lines to re-theme the whole page.
+           Currently: T-Rex blue + gold.
+           For an HKU-branded look instead, use:
+               --brand: #006B54;  --brand-soft: rgba(0,107,84,0.06);
+           ===================================================================== */
+        :root {
+            --bg:           #ffffff;
+            --bg-soft:      #f7f8fa;
+            --text:         #1a1a1a;
+            --text-muted:   #555a63;
+            --text-faint:   #7a818c;
+            --border:       rgba(0,0,0,0.10);
+            --border-soft:  rgba(0,0,0,0.06);
+            --brand:        #003262;              /* deep blue */
+            --brand-soft:   rgba(0,50,98,0.06);
+            --gold:         #FFC72C;   /* was #FDB515 (T-Rex / Berkeley gold) */
+            --gold-deep:    #C68B16;
+            --gold-soft:    rgba(255,199,44,0.10);
+
+            /* ===== Layout =====
+               Every band (hero, sections, dividers, footer) shares this
+               container so their left edges line up at any width.
+
+               The column is a PERCENTAGE of the viewport, so the side margins
+               stay at the same ~17% ratio on every screen instead of growing
+               on big displays. --content-cap only bites above ~3150px, where
+               66% would otherwise be an absurd line length. */
+            --content-width: 66%;
+            --content-cap: 90rem;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 4rem;
+            /* Fluid type scale. Every size on the page is rem-based, so this
+               one line sets the overall scale: raise the three numbers to grow
+               the whole page, lower them to shrink it. */
+            font-size: clamp(16px, 0.55vw + 9px, 22.5px);
+        }
+
+        body {
+            font-family: 'Inter', 'Arial', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        a { color: inherit; }
+
+        /* ===== Hero ===== */
+        .hero {
+            display: flex; align-items: flex-start;
+            width: var(--content-width);
+            max-width: var(--content-cap);
+            margin: 0 auto;
+            padding: 5rem 0 2rem;
+            position: relative;
+        }
+        .hero-inner { display: flex; align-items: flex-start; }
+        .vertical-bar {
+            width: 0.625rem; height: 9rem;
+            background: var(--gold);
+            margin-right: 2rem;
+            flex-shrink: 0;
+        }
+        .hero-photo {
+            width: 14rem; height: 14rem;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 2.5rem;
+            border: 3px solid var(--bg-soft);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            flex-shrink: 0;
+        }
+        .hero-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            color: var(--text);
+        }
+        .hero-title .accent {
+            display: block;
+            color: var(--text);
+            /* Held steady while the root scale went up ~7.5%: 2.9 / 1.075.
+               Everything else on the page grew; the name did not. */
+            font-size: 2.7rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .hero-subtitle {
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            max-width: 51.25rem;
+            line-height: 1.75;
+        }
+        /* Inline links in prose. Borrowed from the T-Rex page: rest in brand
+           blue over a faint rule, then go gold on hover. The text uses
+           --gold-deep rather than --gold because #FDB515 on white is far too
+           low-contrast to read; the rule underneath carries the brighter gold. */
+        .inline-link {
+            color: var(--brand);
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .inline-link:hover {
+            color: var(--gold-deep);
+            border-bottom-color: var(--gold);
+        }
+
+        /* ===== Lightbox =====
+           Ported from the T-Rex project page's ZoomableImage / .img-lightbox:
+           the veil fades in while the image springs up to full size on the
+           same cubic-bezier, and clicking the veil (or Esc) closes it. */
+        .lightbox {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 28px;
+            background: rgba(0,0,0,0);
+            transition: background 0.3s ease;
+            cursor: zoom-out;
+        }
+        .lightbox[hidden] { display: none; }
+        .lightbox[data-open="true"] { background: rgba(0,0,0,0.6); }
+        .lightbox__img {
+            max-width: 96vw;
+            max-height: 92vh;
+            object-fit: contain;
+            border-radius: 8px;
+            background: #fff;
+            cursor: default;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            will-change: transform, opacity;
+            transform: scale(0.4);
+            opacity: 0.5;
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+        }
+        .lightbox[data-open="true"] .lightbox__img { transform: scale(1); opacity: 1; }
+        .lightbox__close {
+            position: fixed; top: 18px; right: 22px;
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px;
+            border: none; border-radius: 8px;
+            background: rgba(255,255,255,0.16);
+            color: #fff;
+            font-size: 1.4rem; line-height: 1;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .lightbox__close:hover { background: rgba(255,255,255,0.3); }
+
+        /* Plain text links joined by slashes — the separators are generated,
+           so reordering or dropping a link needs no cleanup. */
+        .hero-links {
+            /* flex so the newlines between the <a>s don't render as stray
+               spaces around each slash */
+            display: flex; flex-wrap: wrap; align-items: baseline;
+            margin-top: 1.4rem;
+            font-size: 0.95rem;
+            color: var(--text-faint);
+        }
+        .hero-link {
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.25s ease;
+        }
+        .hero-link:hover { color: var(--gold-deep); }
+        .hero-link + .hero-link::before {
+            content: '/';
+            color: var(--text-faint);
+            font-weight: 400;
+            margin: 0 0.5rem;
+        }
+
+        /* ===== Sections ===== */
+        .section {
+            width: var(--content-width);
+            max-width: var(--content-cap);
+            margin: 0 auto;
+            padding: 32px 0 40px;
+        }
+        /* One gap for every section title, so Publications, Experience and
+           anything added later start their content at the same rhythm. */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 2.3rem;
+            color: var(--brand);
+            padding-left: 1rem;
+            border-left: 5px solid var(--gold);
+        }
+        /* Gold center-fading hairline between sections */
+        .section-divider {
+            width: var(--content-width);
+            max-width: var(--content-cap);
+            margin: 1.5rem auto;
+            padding: 0;
+        }
+        .section-divider hr {
+            border: 0; height: 1px;
+            background: linear-gradient(to right, transparent 0%, rgba(255,199,44,0.45) 50%, transparent 100%);
+            margin: 0;
+        }
+
+        /* ===== Experience =====
+           Logo on the left, then organisation / date / location / role / host
+           stacked on the right. */
+        .exp-list { display: flex; flex-direction: column; gap: 2.5rem; }
+        .exp-item {
+            display: grid;
+            grid-template-columns: 6rem 1fr;
+            gap: 1.75rem;
+            align-items: center;
+        }
+        /* Logos are background-images, not <img>: a missing file leaves a
+           tidy grey tile instead of a broken-image icon. */
+        .exp-logo {
+            width: 6rem; height: 6rem;
+            border-radius: 10px;
+            background-color: var(--bg-soft);
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .exp-org {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.4rem;
+        }
+        .exp-date {
+            font-style: italic;
+            color: var(--text-muted);
+        }
+        .exp-line { color: var(--text-muted); }
+        .exp-body { font-size: 0.95rem; line-height: 1.75; }
+
+        @media (max-width: 600px) {
+            .exp-item { grid-template-columns: 1fr; gap: 0.9rem; }
+            .exp-logo { width: 4.5rem; height: 4.5rem; }
+        }
+
+        /* ===== Cards ===== */
+        .card-list { display: flex; flex-direction: column; gap: 1.5rem; }
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .card:hover {
+            border-color: var(--gold);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        }
+        .card-header {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.1rem 1.5rem;
+            background: var(--bg-soft);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .card-name {
+            color: var(--brand);
+            font-size: 1.3rem;
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+        }
+        .card-body { padding: 1.5rem; }
+
+        /* Publication body: teaser figure left, authors + links right.
+           The figure is wide (~1.7:1), so it needs more than a thumbnail
+           slice — 5fr/7fr keeps it legible without crowding the text. */
+        .pub-body {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .pub-figure {
+            width: 100%;
+            border-radius: 6px;
+            border: 1px solid var(--border-soft);
+            display: block;
+        }
+        @media (max-width: 800px) {
+            .pub-body { grid-template-columns: 1fr; }
+        }
+        .card-body p {
+            font-size: 0.98rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+        .card-meta {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            margin-top: 0.7rem;
+            letter-spacing: 0.2px;
+        }
+        /* Own name in an author list. The list is uniformly muted, so the lift
+           comes from the colour step to full --text on top of the weight. */
+        .card-meta .me {
+            font-weight: 700;
+            color: var(--text);
+        }
+        /* Venue line. Deliberately smaller than .card-links' 0.9rem: the row
+           below sets a smaller font, so its half-leading contributes less
+           whitespace. Equal margins here render as unequal gaps — 0.65rem is
+           what makes the ink sit evenly above and below. */
+        .card-venue { margin-top: 0.65rem; }
+        /* Sits between the Publications heading and the list. The negative
+           margin pulls it up toward the heading it belongs to — .section-title's
+           gap is shared with Experience, which has no note under it. */
+        .pub-note {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: -1.05rem;
+            margin-bottom: 1.6rem;
+        }
+
+        /* Author links sit quiet: they read as plain text and only reveal
+           themselves as links on hover. With 34 names, styling them all blue
+           and underlined would turn the list into a wall of noise. */
+        .card-meta .inline-link {
+            color: inherit;
+            border-bottom: none;
+        }
+        .card-meta .inline-link:hover { color: var(--gold-deep); }
+        /* Slash-joined text links, matching the hero. Separators are generated,
+           so adding or dropping a link needs no cleanup. */
+        .card-links {
+            display: flex; flex-wrap: wrap; align-items: baseline;
+            margin-top: 0.9rem;
+            font-size: 0.9rem;
+            color: var(--text-faint);
+        }
+        .card-link {
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.25s ease;
+        }
+        .card-link:hover { color: var(--gold-deep); }
+        /* A link slot whose target doesn't exist yet. Keeps the .card-link class
+           so the generated '/' separators still bind, but renders as plain text.
+           To activate: swap the <span> for an <a href> and drop this class. */
+        .card-link.is-pending {
+            color: var(--text-faint);
+            font-weight: 400;
+            cursor: default;
+        }
+        .card-link.is-pending:hover { color: var(--text-faint); }
+        .card-link + .card-link::before {
+            content: '/';
+            color: var(--text-faint);
+            font-weight: 400;
+            margin: 0 0.5rem;
+        }
+
+        /* ===== Footer ===== */
+        .footer {
+            width: var(--content-width);
+            max-width: var(--content-cap);
+            margin: 0 auto;
+            padding: 40px 0 60px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-faint);
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: var(--brand); text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        .footer a:hover {
+            color: var(--gold-deep);
+            border-bottom-color: var(--gold);
+        }
+
+        /* ===== Responsive =====
+           Below ~1200px a 20% margin costs more than it buys, so the column
+           widens in steps. Every band reads --content-width, so overriding
+           the one variable moves the whole page. */
+        @media (max-width: 1200px) {
+            :root { --content-width: 74%; }
+        }
+        @media (max-width: 900px) {
+            :root { --content-width: 84%; }
+        }
+        @media (max-width: 768px) {
+            :root { --content-width: 88%; }
+            .hero { padding: 4rem 0 1rem; }
+            .hero-inner { flex-wrap: wrap; }
+            .vertical-bar { height: 6rem; margin-right: 1rem; }
+            .hero-photo { width: 7rem; height: 7rem; margin-right: 1.25rem; }
+            .hero-title { font-size: 1.1rem; }
+            .hero-title .accent { font-size: 2.3rem; }
+            .hero-subtitle { font-size: 1rem; }
+            .section { padding: 24px 0 32px; }
+            .section-title { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="vertical-bar"></div>
+            <img class="hero-photo" src="profile-photo.jpg" alt="Boning Shao">
+            <div>
+                <h1 class="hero-title">
+                    <span class="accent">Boning Shao</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Hi! I'm a third-year undergraduate student at
+                    <a class="inline-link" href="https://www.hku.hk/">The University of
+                    Hong Kong</a>, majoring in Applied AI. Currently, I am a visiting
+                    student at <a class="inline-link" href="https://bair.berkeley.edu/">BAIR</a>
+                    at <a class="inline-link" href="https://www.berkeley.edu/">UC
+                    Berkeley</a>, advised by
+                    <a class="inline-link" href="https://people.eecs.berkeley.edu/~trevor/">Prof.
+                    Trevor Darrell</a>. Prior to this, I was a research intern at the
+                    <a class="inline-link" href="https://visailab.github.io/">Visual AI
+                    Lab</a> at The University of Hong Kong, advised by
+                    <a class="inline-link" href="https://www.kaihan.org/">Prof. Kai
+                    Han</a>. I'm broadly interested in robot learning and computer
+                    vision &mdash; currently, how robots can combine visual and tactile
+                    perception for dexterous manipulation.
+                </p>
+                <div class="hero-links">
+                    <a class="hero-link" href="mailto:sbn252608@gmail.com">Email</a>
+                    <a class="hero-link" href="https://github.com/sbnlight">GitHub</a>
+                    <!-- TODO: real Google Scholar profile URL -->
+                    <a class="hero-link" href="#">Google Scholar</a>
+                    <a class="hero-link" href="https://www.linkedin.com/in/boning-shao/">LinkedIn</a>
+                    <!-- href is the no-JS fallback: it opens the QR on its own. -->
+                    <a class="hero-link js-wechat" href="wechat.png">WeChat</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-divider"><hr></div>
+
+    <!-- ===== Publications ===== -->
+    <section class="section" id="publications">
+        <h2 class="section-title">Publications</h2>
+        <p class="pub-note">* denotes equal contribution&emsp;&emsp;&dagger; denotes equal advising</p>
+        <div class="card-list">
+
+            <article class="card">
+                <header class="card-header">
+                    <h3 class="card-name">T-Rex: Tactile-Reactive Dexterous Manipulation</h3>
+                </header>
+                <div class="card-body pub-body">
+                    <img class="pub-figure" src="trex-teaser.png" alt="T-Rex teaser figure">
+                    <div>
+                        <div class="card-meta">
+                            <a class="inline-link" href="https://dantong88.github.io/">Dantong Niu</a>*,
+                            <a class="inline-link" href="https://zhuoyang-liu.github.io/">Zhuoyang Liu</a>*,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=Dngm3CYAAAAJ&amp;hl=en">Zekai Wang</a>*,
+                            <strong class="me">Boning Shao</strong>,
+                            <a class="inline-link" href="https://zhaohengyin.github.io/">Zhao-Heng Yin</a>,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=9Iv9490AAAAJ&amp;hl=en">Anirudh Pai</a>,
+                            <a class="inline-link" href="https://yuvansharma.github.io/">Yuvan Sharma</a>,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=uQxwnnUAAAAJ&amp;hl=en">Stefano Saravalle</a>,
+                            <a class="inline-link" href="https://ruijiezheng.com/">Ruijie Zheng</a>,
+                            <a class="inline-link" href="https://scholar.google.com/citations?hl=en&amp;user=cdL5PqgAAAAJ">Jing Wang</a>,
+                            <a class="inline-link" href="https://scholar.google.com/citations?hl=en&amp;user=S-y6EGYAAAAJ">Ryan Punamiya</a>,
+                            <a class="inline-link" href="https://mengdaxu.github.io/">Mengda Xu</a>,
+                            <a class="inline-link" href="https://xieleo5.github.io/">Yuqi Xie</a>,
+                            <a class="inline-link" href="https://yunfanj.com/">Yunfan Jiang</a>,
+                            <a class="inline-link" href="https://max-fu.github.io/">Letian Fu</a>,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=5EuNtbQAAAAJ&amp;hl=en">Konstantinos Kallidromitis</a>,
+                            <a class="inline-link" href="https://matteogioia.github.io/">Matteo Gioia</a>,
+                            <a class="inline-link" href="https://www.junyi42.com/">Junyi Zhang</a>,
+                            <a class="inline-link" href="https://gejiaxin.org/">Jiaxin Ge</a>,
+                            <a class="inline-link" href="https://havenfeng.github.io/">Haiwen Feng</a>,
+                            <a class="inline-link" href="https://fgalasso.bitbucket.io/">Fabio Galasso</a>,
+                            <a class="inline-link" href="https://zhanwei.site/">Wei Zhan</a>,
+                            <a class="inline-link" href="https://dchan.cc/">David M. Chan</a>,
+                            <a class="inline-link" href="https://yutongbai.com/">Yutong Bai</a>,
+                            <a class="inline-link" href="https://roeiherz.github.io/">Roei Herzig</a>,
+                            <a class="inline-link" href="https://jiahuilei.com/">Jiahui Lei</a>,
+                            <a class="inline-link" href="https://profiles.stanford.edu/fei-fei-li">Fei-Fei Li</a>,
+                            <a class="inline-link" href="https://www2.eecs.berkeley.edu/Faculty/Homepages/goldberg.html">Ken Goldberg</a>,
+                            <a class="inline-link" href="https://people.eecs.berkeley.edu/~malik/">Jitendra Malik</a>,
+                            <a class="inline-link" href="https://www2.eecs.berkeley.edu/Faculty/Homepages/abbeel.html">Pieter Abbeel</a>,
+                            <a class="inline-link" href="https://yukezhu.me/">Yuke Zhu</a>,
+                            <a class="inline-link" href="https://faculty.cc.gatech.edu/~danfei/">Danfei Xu</a>,
+                            <a class="inline-link" href="https://jimfan.me/">Jim (Linxi) Fan</a>,
+                            <a class="inline-link" href="https://people.eecs.berkeley.edu/~trevor/">Trevor Darrell</a>
+                            <div class="card-venue">arXiv preprint, 2026</div>
+                        </div>
+                        <div class="card-links">
+                            <a class="card-link" href="https://tactile-reactive-dexterous.github.io/">Project Page</a>
+                            <a class="card-link" href="https://arxiv.org/abs/2606.17055">arXiv</a>
+                            <a class="card-link" href="https://github.com/ZhuoyangLiu2005/T-Rex">Code</a>
+                            <a class="card-link" href="https://huggingface.co/datasets/zekaiwang/trex_dataset">Dataset</a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <header class="card-header">
+                    <h3 class="card-name">Contrastive Action-Image Pre-training for Visuomotor Control</h3>
+                </header>
+                <div class="card-body pub-body">
+                    <img class="pub-figure" src="caip-teaser.png" alt="CAIP architecture figure">
+                    <div>
+                        <div class="card-meta">
+                            <a class="inline-link" href="https://yuvansharma.github.io/">Yuvan Sharma</a>*,
+                            <a class="inline-link" href="https://dantong88.github.io/">Dantong Niu</a>*,
+                            <a class="inline-link" href="https://www.linkedin.com/in/apai25">Anirudh Pai</a>*,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=Dngm3CYAAAAJ&amp;hl=en">Zekai Wang</a>,
+                            <a class="inline-link" href="https://zhuoyang-liu.github.io/">Zhuoyang Liu</a>,
+                            <a class="inline-link" href="https://bfshi.github.io/">Baifeng Shi</a>,
+                            Stefano Saravalle, <strong class="me">Boning Shao</strong>,
+                            <a class="inline-link" href="https://ruijiezheng.com/">Ruijie Zheng</a>,
+                            Jing Wang,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=5EuNtbQAAAAJ&amp;hl=en">Konstantinos Kallidromitis</a>,
+                            Yusuke Kato,
+                            <a class="inline-link" href="https://fgalasso.bitbucket.io/">Fabio Galasso</a>,
+                            <a class="inline-link" href="https://yukezhu.me/">Yuke Zhu</a>,
+                            <a class="inline-link" href="https://faculty.cc.gatech.edu/~danfei/">Danfei Xu</a>,
+                            <a class="inline-link" href="https://jimfan.me/">Linxi &ldquo;Jim&rdquo; Fan</a>,
+                            <a class="inline-link" href="https://people.eecs.berkeley.edu/~malik/">Jitendra Malik</a>&dagger;,
+                            <a class="inline-link" href="https://people.eecs.berkeley.edu/~trevor/">Trevor Darrell</a>&dagger;,
+                            <a class="inline-link" href="https://roeiherz.github.io/">Roei Herzig</a>&dagger;
+                            <div class="card-venue">arXiv preprint, 2026</div>
+                        </div>
+                        <div class="card-links">
+                            <a class="card-link" href="https://caip-encoder.github.io/">Project Page</a>
+                            <a class="card-link" href="https://arxiv.org/abs/2606.17256">arXiv</a>
+                            <a class="card-link" href="https://huggingface.co/yuvansharma/caip-vitl256">Model</a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <header class="card-header">
+                    <h3 class="card-name">Periodic Bootstrap Thompson Sampling for Periodically Non-Stationary Bandit Problems</h3>
+                </header>
+                <div class="card-body pub-body">
+                    <img class="pub-figure" src="pbts-teaser.png" alt="Cumulative regret of Periodic Bootstrap Thompson Sampling versus traditional Thompson Sampling across periodic environments">
+                    <div>
+                        <div class="card-meta">
+                            <strong class="me">Boning Shao</strong>
+                            <div class="card-venue">Accepted, 2025</div>
+                        </div>
+                        <div class="card-links">
+                            <span class="card-link is-pending">arXiv (coming soon)</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+    <div class="section-divider"><hr></div>
+
+    <!-- ===== Experience ===== -->
+    <section class="section" id="experience">
+        <h2 class="section-title">Experience</h2>
+        <div class="exp-list">
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/bair.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">Berkeley Artificial Intelligence Research</div>
+                    <div class="exp-date">2026.01 ~ present</div>
+                    <div class="exp-line">Berkeley, CA, USA</div>
+                    <div class="exp-line">Research Intern</div>
+                    <div class="exp-line">Host:
+                        <a class="inline-link" href="https://people.eecs.berkeley.edu/~trevor/">Prof. Trevor Darrell</a>;
+                        Mentor: <a class="inline-link" href="https://dantong88.github.io/">Dantong Niu</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/fudan.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">Fudan University</div>
+                    <div class="exp-date">2025.06 ~ 2025.07</div>
+                    <div class="exp-line">Shanghai, China</div>
+                    <div class="exp-line">Research Intern</div>
+                    <div class="exp-line">Supervisor:
+                        <a class="inline-link" href="https://scholar.google.com/citations?user=odFW4FoAAAAJ">Prof. Yanghua Xiao</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/hku.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">The University of Hong Kong</div>
+                    <div class="exp-date">2025.02 ~ 2025.03</div>
+                    <div class="exp-line">Hong Kong SAR, China</div>
+                    <div class="exp-line">Research Intern</div>
+                    <div class="exp-line">Supervisor:
+                        <a class="inline-link" href="https://www.kaihan.org/">Prof. Kai Han</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/infinigence-ai.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">Infinigence AI</div>
+                    <div class="exp-date">2024.07</div>
+                    <div class="exp-line">Shanghai, China</div>
+                    <div class="exp-line">Product Manager Intern</div>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/moore-threads.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">Moore Threads Technology</div>
+                    <div class="exp-date">2024.06</div>
+                    <div class="exp-line">Shanghai, China</div>
+                    <div class="exp-line">HSIO Intern</div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="section-divider"><hr></div>
+
+    <!-- ===== Education ===== -->
+    <section class="section" id="education">
+        <h2 class="section-title">Education</h2>
+        <div class="exp-list">
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/hku.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">The University of Hong Kong</div>
+                    <div class="exp-date">2023.09 ~ 2027.06</div>
+                    <div class="exp-line">Bachelor of Arts and Sciences in Applied AI</div>
+                </div>
+            </div>
+
+            <div class="exp-item">
+                <div class="exp-logo" style="background-image: url('logos/ucb.jpg')"></div>
+                <div class="exp-body">
+                    <div class="exp-org">University of California, Berkeley</div>
+                    <div class="exp-date">2026.01 ~ present</div>
+                    <div class="exp-line">Visiting Student, Berkeley Global Access (BGA) Program</div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>&copy; 2026 Boning Shao</p>
+    </footer>
+
+    <div class="lightbox" id="wechat-lightbox" hidden>
+        <button class="lightbox__close" type="button" aria-label="Close">&times;</button>
+        <img class="lightbox__img" src="wechat.png" alt="WeChat QR code">
+    </div>
+
+    <script>
+        // Click the WeChat link to enlarge the QR; click the veil, the close
+        // button, or press Esc to dismiss. Without JS the link just opens
+        // wechat.png on its own.
+        (() => {
+            const trigger = document.querySelector('.js-wechat');
+            const box = document.getElementById('wechat-lightbox');
+            if (!trigger || !box) return;
+            const img = box.querySelector('.lightbox__img');
+
+            const open = e => {
+                e.preventDefault();
+                box.hidden = false;
+                // Two frames: let it paint at scale(0.4) before the transition
+                // target lands, otherwise it snaps open with no animation.
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    box.dataset.open = 'true';
+                }));
+            };
+            const close = () => {
+                delete box.dataset.open;
+                setTimeout(() => { box.hidden = true; }, 300);
+            };
+
+            trigger.addEventListener('click', open);
+            box.addEventListener('click', close);
+            img.addEventListener('click', e => e.stopPropagation());
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && !box.hidden) close();
+            });
+        })();
+    </script>
+</body>
+</html>
