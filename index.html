@@ -278,10 +278,19 @@
             padding: 1.1rem 1.5rem;
             background: var(--bg-soft);
             border-bottom: 1px solid var(--border-soft);
+            container-type: inline-size;
         }
+        /* Titles stay on one line on any computer screen: the size tracks the
+           header width (cqi), tuned so the longest title — PBTS, ~42.5em wide
+           in Inter 600 — fits with ~4% to spare. Every header is the same
+           width, so all titles shrink together and stay one size. Capped at
+           1.3rem on big displays; the 0.95rem floor only holds below ~980px,
+           where titles wrap again rather than shrinking to unreadable.
+           Adding a longer title? Set the cqi number to 100 / (its em width × 1.04). */
         .card-name {
             color: var(--brand);
-            font-size: 1.3rem;
+            font-size: 1.3rem;  /* fallback where cqi is unsupported */
+            font-size: clamp(0.95rem, 2.25cqi, 1.3rem);
             font-weight: 600;
             flex: 1;
             min-width: 0;
@@ -434,9 +443,9 @@
                     <span class="accent">Boning Shao</span>
                 </h1>
                 <p class="hero-subtitle">
-                    Hi! I'm a third-year undergraduate student at
+                    Hi! I'm a final-year undergraduate student at
                     <a class="inline-link" href="https://www.hku.hk/">The University of
-                    Hong Kong</a>, majoring in Applied AI. Currently, I am a visiting
+                    Hong Kong</a>, majoring in Applied AI. Previously, I was a visiting
                     student at <a class="inline-link" href="https://bair.berkeley.edu/">BAIR</a>
                     at <a class="inline-link" href="https://www.berkeley.edu/">UC
                     Berkeley</a>, advised by
@@ -511,7 +520,7 @@
                             <a class="inline-link" href="https://faculty.cc.gatech.edu/~danfei/">Danfei Xu</a>,
                             <a class="inline-link" href="https://jimfan.me/">Jim (Linxi) Fan</a>,
                             <a class="inline-link" href="https://people.eecs.berkeley.edu/~trevor/">Trevor Darrell</a>
-                            <div class="card-venue">CoRL, 2027</div>
+                            <div class="card-venue">CoRL, 2026</div>
                         </div>
                         <div class="card-links">
                             <a class="card-link" href="https://tactile-reactive-dexterous.github.io/">Project Page</a>
@@ -592,7 +601,7 @@
                 <div class="exp-logo" style="background-image: url('logos/bair.jpg')"></div>
                 <div class="exp-body">
                     <div class="exp-org">Berkeley Artificial Intelligence Research</div>
-                    <div class="exp-date">2026.01 ~ present</div>
+                    <div class="exp-date">2026.01 ~ 2026.09</div>
                     <div class="exp-line">Berkeley, CA, USA</div>
                     <div class="exp-line">Research Intern</div>
                     <div class="exp-line">Host:
@@ -671,7 +680,7 @@
                 <div class="exp-logo" style="background-image: url('logos/ucb.jpg')"></div>
                 <div class="exp-body">
                     <div class="exp-org">University of California, Berkeley</div>
-                    <div class="exp-date">2026.01 ~ present</div>
+                    <div class="exp-date">2026.01 ~ 2026.09</div>
                     <div class="exp-line">Visiting Student, Berkeley Global Access (BGA) Program</div>
                 </div>
             </div>
