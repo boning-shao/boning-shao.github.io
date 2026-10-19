@@ -333,6 +333,16 @@
             font-weight: 700;
             color: var(--text);
         }
+        /* Project-lead mark. Inter already draws * and † as small raised
+           marks, but ‡ comes out full cap height; shrink and lift it to match.
+           position:relative rather than <sup> so it doesn't open up the
+           line spacing. */
+        .card-meta .lead-mark {
+            font-size: 0.75em;
+            font-weight: 500;
+            position: relative;
+            top: -0.32em;
+        }
         /* Venue line. Deliberately smaller than .card-links' 0.9rem: the row
            below sets a smaller font, so its half-leading contributes less
            whitespace. Equal margins here render as unequal gaps — 0.65rem is
@@ -540,7 +550,7 @@
                     <img class="pub-figure" src="dextacwam-teaser.png" alt="DexTacWAM overview: three-stage training recipe, visuo-tactile world-action model architecture, and real-world results on six contact-rich tasks">
                     <div>
                         <div class="card-meta">
-                            <a class="inline-link" href="https://scholar.google.com/citations?user=PzdigUMAAAAJ">Haoran Yuan</a>&Dagger;,
+                            <a class="inline-link" href="https://scholar.google.com/citations?user=PzdigUMAAAAJ">Haoran Yuan</a><span class="lead-mark">&Dagger;</span>,
                             <a class="inline-link" href="https://scholar.google.com/citations?user=Dngm3CYAAAAJ&amp;hl=en">Zekai Wang</a>,
                             <strong class="me">Boning Shao</strong>,
                             <a class="inline-link" href="https://luhr2003.github.io/">Haoran Lu</a>,
@@ -568,7 +578,7 @@
                     <div>
                         <div class="card-meta">
                             <a class="inline-link" href="https://yuvansharma.github.io/">Yuvan Sharma</a>*,
-                            <a class="inline-link" href="https://dantong88.github.io/">Dantong Niu</a>*&Dagger;,
+                            <a class="inline-link" href="https://dantong88.github.io/">Dantong Niu</a>*<span class="lead-mark">&Dagger;</span>,
                             <a class="inline-link" href="https://www.linkedin.com/in/apai25">Anirudh Pai</a>*,
                             <a class="inline-link" href="https://scholar.google.com/citations?user=Dngm3CYAAAAJ&amp;hl=en">Zekai Wang</a>,
                             <a class="inline-link" href="https://zhuoyang-liu.github.io/">Zhuoyang Liu</a>,
